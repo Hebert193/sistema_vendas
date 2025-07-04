@@ -2,128 +2,87 @@
 CREATE DATABASE IF NOT EXISTS sistema_vendas;
 USE sistema_vendas;
 
--- Tabela Categoria
-CREATE TABLE IF NOT EXISTS Categoria (
+-- Tabela usuario (unifica clientes e administradores)
+CREATE TABLE IF NOT EXISTS usuario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome_completo VARCHAR(150) NOT NULL, -- Campo para o nome real do cliente/admin
+    nome_usuario VARCHAR(50) NOT NULL UNIQUE, -- Campo para login
+    senha VARCHAR(255) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    telefone VARCHAR(20),
+    cpf VARCHAR(14) UNIQUE,
+    is_admin TINYINT(1) DEFAULT 0, -- Simplificação do sistema de permissão
+    ativo TINYINT(1) DEFAULT 1,
+    token VARCHAR(255),
+    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    usuario_atualizacao INT,
+    FOREIGN KEY (usuario_atualizacao) REFERENCES usuario(id) ON DELETE SET NULL
+);
+
+-- Tabela categoria
+CREATE TABLE IF NOT EXISTS categoria (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
     descricao TEXT,
-    dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-    dataAtualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    usuarioAtualizacao INT,
-    ativo TINYINT(1) DEFAULT 1
+    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    usuario_atualizacao INT,
+    ativo TINYINT(1) DEFAULT 1,
+    FOREIGN KEY (usuario_atualizacao) REFERENCES usuario(id) ON DELETE SET NULL
 );
 
--- Tabela FormaPagamento
-CREATE TABLE IF NOT EXISTS FormaPagamento (
+-- Tabela forma_pagamento
+CREATE TABLE IF NOT EXISTS forma_pagamento (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
     descricao TEXT,
-    dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-    dataAtualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    usuarioAtualizacao INT,
-    ativo TINYINT(1) DEFAULT 1
+    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    usuario_atualizacao INT,
+    ativo TINYINT(1) DEFAULT 1,
+    FOREIGN KEY (usuario_atualizacao) REFERENCES usuario(id) ON DELETE SET NULL
 );
 
--- Tabela Produto
-CREATE TABLE IF NOT EXISTS Produto (
+-- Tabela produto
+CREATE TABLE IF NOT EXISTS produto (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
     descricao TEXT,
     preco DECIMAL(10,2) NOT NULL,
-    dategoriaID INT,
-    dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-    dataAtualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    usuarioAtualizacao INT,
+    categoria_id INT,
+    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    usuario_atualizacao INT,
     ativo TINYINT(1) DEFAULT 1,
-    INDEX idx_nome (Nome),
-    CONSTRAINT fk_produto_categoria FOREIGN KEY (CategoriaID) REFERENCES Categoria(Id) ON DELETE SET NULL
+    INDEX idx_nome (nome),
+    CONSTRAINT fk_produto_categoria FOREIGN KEY (categoria_id) REFERENCES categoria(id) ON DELETE SET NULL,
+    FOREIGN KEY (usuario_atualizacao) REFERENCES usuario(id) ON DELETE SET NULL
 );
 
--- Tabela Cliente
-CREATE TABLE IF NOT EXISTS Cliente (
+-- Tabela pedido
+CREATE TABLE IF NOT EXISTS pedido (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE,
-    telefone VARCHAR(20),
-    dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-    dataAtualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    usuarioAtualizacao INT,
+    cliente_id INT, -- Refere-se a um 'usuario'
+    data_pedido DATETIME NOT NULL,
+    forma_pagamento_id INT,
+    status VARCHAR(50) NOT NULL, -- Ex: 'Pendente', 'Pago', 'Enviado', 'Cancelado'
+    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    usuario_atualizacao INT,
     ativo TINYINT(1) DEFAULT 1,
-    INDEX idx_nome (Nome)
+    FOREIGN KEY (cliente_id) REFERENCES usuario(id) ON DELETE SET NULL,
+    FOREIGN KEY (forma_pagamento_id) REFERENCES forma_pagamento(id) ON DELETE SET NULL,
+    FOREIGN KEY (usuario_atualizacao) REFERENCES usuario(id) ON DELETE SET NULL
 );
 
--- Tabela Pedido
-CREATE TABLE IF NOT EXISTS Pedido (
+-- Tabela item_pedido
+CREATE TABLE IF NOT EXISTS item_pedido (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    clienteID INT,
-    dataPedido DATETIME NOT NULL,
-    formaPagamentoId INT,
-    Status VARCHAR(50) NOT NULL,
-    dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-    dataAtualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    usuarioAtualizacao INT,
-    ativo TINYINT(1) DEFAULT 1,
-    FOREIGN KEY (ClienteID) REFERENCES Cliente(Id),
-    FOREIGN KEY (FormaPagamentoId) REFERENCES FormaPagamento(Id)
-);
-
--- Tabela ItemPedido
-CREATE TABLE IF NOT EXISTS ItemPedido (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    pedidoId INT NOT NULL,
-    irodutoId INT,
+    pedido_id INT NOT NULL,
+    produto_id INT,
     quantidade INT NOT NULL,
-    precoUnitario DECIMAL(10,2) NOT NULL, -- Boa prática para guardar o preço no momento da compra
-    dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-    dataAtualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    usuarioAtualizacao INT,
-    FOREIGN KEY (ProdutoId) REFERENCES Produto(Id) ON DELETE SET NULL,
-    -- A MUDANÇA PRINCIPAL ESTÁ AQUI: ON DELETE CASCADE
-    FOREIGN KEY (PedidoId) REFERENCES Pedido(Id) ON DELETE CASCADE
-);
-
--- Tabela GrupoUsuario
-CREATE TABLE IF NOT EXISTS GrupoUsuario (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    descricao TEXT,
-    dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-    dataAtualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    usuarioAtualizacao INT,
-    ativo TINYINT(1) DEFAULT 1
-);
-
--- Tabela Permissao
-CREATE TABLE IF NOT EXISTS Permissao (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    descricao TEXT,
-    dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-    dataAtualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    usuarioAtualizacao INT,
-    ativo TINYINT(1) DEFAULT 1
-);
-
--- Tabela PermissaoGrupo (Tabela de Ligação)
-CREATE TABLE IF NOT EXISTS PermissaoGrupo (
-    PermissaoID INT,
-    GrupoUsuarioID INT,
-    PRIMARY KEY (PermissaoID, GrupoUsuarioID),
-    FOREIGN KEY (PermissaoID) REFERENCES Permissao(Id) ON DELETE CASCADE,
-    FOREIGN KEY (GrupoUsuarioID) REFERENCES GrupoUsuario(Id) ON DELETE CASCADE
-);
-
--- Tabela Usuario
-CREATE TABLE IF NOT EXISTS Usuario (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    NomeUsuario VARCHAR(50) NOT NULL UNIQUE,
-    Senha VARCHAR(255) NOT NULL,
-    Email VARCHAR(100) UNIQUE,
-    irupoUsuarioID INT,
-    ativo TINYINT(1) DEFAULT 1,
-    token VARCHAR(255) DEFAULT NULL,
-    dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-    dataAtualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    usuarioAtualizacao INT,
-    FOREIGN KEY (GrupoUsuarioID) REFERENCES GrupoUsuario(Id)
+    preco_unitario DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (produto_id) REFERENCES produto(id) ON DELETE SET NULL,
+    FOREIGN KEY (pedido_id) REFERENCES pedido(id) ON DELETE CASCADE
 );
