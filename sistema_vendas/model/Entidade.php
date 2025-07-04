@@ -1,8 +1,9 @@
 <?php
 
-/*
-Classe base abastrata para todas as entidades do sistema
-*/
+/**
+ * Classe base abstrata para todas as entidades do sistema.
+ * Contém campos comuns de auditoria e controle.
+ */
 class Entidade
 {
     protected ?int $id;
@@ -11,13 +12,13 @@ class Entidade
     protected ?int $usuarioAtualizacao;
     protected bool $ativo;
 
-    public function __construct(?int $id, bool $ativo = true, ?string $dataCriacao = null, ?string $dataAtualizacao = null, ?int $usuarioAtualizacao = null)
+    public function __construct(?int $id, bool $ativo, ?string $dataCriacao, ?string $dataAtualizacao, ?int $usuarioAtualizacao)
     {
         $this->id = $id;
+        $this->ativo = $ativo;
         $this->dataCriacao = $dataCriacao;
         $this->dataAtualizacao = $dataAtualizacao;
         $this->usuarioAtualizacao = $usuarioAtualizacao;
-        $this->ativo = $ativo;
     }
 
     public function getId(): ?int { return $this->id; }
